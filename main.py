@@ -101,7 +101,9 @@ class AgentState(TypedDict):
 
 
 # 使用最新支援的 gemini-3.6-flash 模型
-llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash")
+llm = ChatGoogleGenerativeAI(
+    model="gemini-3.6-flash",
+    max_retries=6  # 遇到 429 自動重試，給予 API 冷卻時間)
 llm_with_tools = llm.bind_tools(tools)
 
 
