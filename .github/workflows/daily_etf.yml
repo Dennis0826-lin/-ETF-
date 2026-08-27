@@ -2,12 +2,11 @@ name: Daily ETF Report Workflow
 
 on:
   schedule:
-    # 每天台灣時間 14:30 (UTC 06:30) 自動執行
     - cron: '30 6 * * *'
-  workflow_dispatch: # 允許手動觸發 (Run workflow)
+  workflow_dispatch:
 
 jobs:
-  run-etf-report:
+  run-agent:
     runs-on: ubuntu-latest
 
     steps:
