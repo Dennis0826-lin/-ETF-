@@ -126,7 +126,9 @@ graph = builder.compile(checkpointer=MemorySaver())
 # ==========================================
 if __name__ == "__main__":
     config = {"configurable": {"thread_id": "daily_job"}}
-    user_input = "請查詢 00685L、00631L、00878、00918 的最新股價，整理成簡潔的收盤報告後，分別發送到我的 Telegram 與 Email！"
+    user_input = (
+    "請使用 get_etf_prices 查詢 00685L、00631L、00878、00918 的最新股價，"
+    "將整理好的收盤報告同時調用 send_telegram_message 與 send_email_notification 發送出去。")
 
     events = graph.stream(
         {"messages": [("user", user_input)]}, config, stream_mode="values"
