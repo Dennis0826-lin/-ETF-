@@ -1,4 +1,7 @@
+import email.mime.multipart
+import email.mime.text
 import os
+import smtplib
 from typing import Annotated, List, TypedDict
 from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -10,7 +13,9 @@ import requests
 import yfinance as yf
 
 
-# 1. 工具定義
+# ==========================================
+# 1. 工具定義 (Tools)
+# ==========================================
 @tool
 def get_etf_prices(symbols: List[str]) -> str:
     """抓取台股 ETF 價格"""
@@ -44,6 +49,9 @@ def send_telegram_message(message: str) -> str:
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
 
+    if not bot_token or not chat_id:
+        return "Telegram 設定不完整，跳過 Telegram 發送。"
+
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload = {"chat_id": chat_id, "text": message}
 
@@ -51,18 +59,48 @@ def send_telegram_message(message: str) -> str:
     return (
         "Telegram 訊息發送成功！"
         if response.status_code == 200
-        else f"發送失敗: {response.text}"
+        else f"Telegram 發送失敗: {response.text}"
     )
 
 
-tools = [get_etf_prices, send_telegram_message]
+@tool
+def send_email_notification(subject: str, content: str) -> str:
+    """將報告或通知內容發送至指定 Email 信箱。"""
+    sender_email = os.environ.get("SENDER_EMAIL")
+    sender_password = os.environ.get("SENDER_PASSWORD")
+    receiver_email = os.environ.get("RECEIVER_EMAIL")
+
+    if not sender_email or not sender_password or not receiver_email:
+        return "Email 設定不完整，跳過 Email 發送。"
+
+    try:
+        msg = email.mime.multipart.MIMEMultipart()
+        msg["From"] = sender_email
+        msg["To"] = receiver_email
+        msg["Subject"] = subject
+
+        msg.attach(email.mime.text.MIMEText(content, "plain", "utf-8"))
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+
+        return "Email 通知發送成功！"
+    except Exception as e:
+        return f"Email 發送失敗: {str(e)}"
 
 
-# 2. Agent 建立
+tools = [get_etf_prices, send_telegram_message, send_email_notification]
+
+
+# ==========================================
+# 2. Agent 建立 (LangGraph)
+# ==========================================
 class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
 
 
+# 使用最新支援的 gemini-3.6-flash 模型
 llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash")
 llm_with_tools = llm.bind_tools(tools)
 
@@ -80,10 +118,13 @@ builder.add_edge("tools", "chatbot")
 
 graph = builder.compile(checkpointer=MemorySaver())
 
+
+# ==========================================
 # 3. 執行入口
+# ==========================================
 if __name__ == "__main__":
     config = {"configurable": {"thread_id": "daily_job"}}
-    user_input = "請查詢 00685L、00631L、00878、00918 的最新股價，整理成簡潔的收盤報告並發送到 Telegram！"
+    user_input = "請查詢 00685L、00631L、00878、00918 的最新股價，整理成簡潔的收盤報告後，分別發送到我的 Telegram 與 Email！"
 
     events = graph.stream(
         {"messages": [("user", user_input)]}, config, stream_mode="values"
