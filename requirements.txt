@@ -8,3 +8,4 @@ requests
 faiss-cpu
 langchain-community
 pypdf
+docx2txt
