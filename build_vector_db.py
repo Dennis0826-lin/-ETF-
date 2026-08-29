@@ -60,8 +60,10 @@ def build_index():
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get(
         "GOOGLE_API_KEY"
     )
-   embeddings = GoogleGenerativeAIEmbeddings(
-        model="text-embedding-004", google_api_key=api_key
+   # 找到這一段，修改為：
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model="text-embedding-004", 
+        google_api_key=api_key
     )
 
     vectorstore = FAISS.from_documents(splits, embeddings)
