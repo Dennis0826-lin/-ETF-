@@ -1,11 +1,13 @@
 langchain-core
 langchain-google-genai>=2.0.0
+google-genai
+langchain-community
+faiss-cpu
 langgraph
 yfinance
 gspread
 google-auth
 requests
-faiss-cpu
 langchain-community
 pypdf
 docx2txt
