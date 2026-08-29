@@ -65,7 +65,7 @@ def write_to_google_sheets(
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive",
         ]
-        creds = Credentials.from_service_account_info(
+        creds = Credentials._service_account_info(
             service_account_info, scopes=scopes
         )
         gc = gspread.authorize(creds)
@@ -225,8 +225,11 @@ if not api_key:
 
 # 設定模型為 gemini-1.5-flash，並將重試次數提高至 5 次以應對 API 503 伺服器過載
 # 修改 main.py 中的 llm 設定
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
+    model_provider="google-genai",
     api_key=api_key,
     max_retries=5,
 )
