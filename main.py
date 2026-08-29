@@ -177,7 +177,7 @@ class AgentState(TypedDict):
 
 # 設定 Gemini 模型 (修復括號與模型名稱)
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3.6-flash",
+    model="gemini-2.5-flash",
     google_api_key=os.environ.get("GEMINI_API_KEY"),
     max_retries=6,
 )
