@@ -5,3 +5,6 @@ yfinance
 gspread
 google-auth
 requests
+faiss-cpu
+langchain-community
+pypdf
