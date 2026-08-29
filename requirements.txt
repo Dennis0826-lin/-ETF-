@@ -9,3 +9,6 @@ faiss-cpu
 langchain-community
 pypdf
 docx2txt
+TextLoader
+pandas
+openpyxl
