@@ -8,8 +8,9 @@ from typing import Annotated, List, TypedDict
 
 import gspread
 from google.oauth2.service_account import Credentials
+from langchain_community.vectorstores import FAISS
 from langchain_core.tools import tool
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
@@ -160,13 +161,48 @@ def send_email_notification(subject: str, content: str) -> str:
         return f"Email 發送失敗: {str(e)}"
 
 
-# 工具清單彙整
+@tool
+def search_personal_docs(query: str) -> str:
+    """查詢個人專屬知識庫（包含個人筆記、策略文件、PDF 說明檔案等）"""
+    try:
+        index_path = "faiss_index"
+        if not os.path.exists(index_path):
+            return "⚠️ 目前尚未建立個人知識庫索引 (faiss_index 資料夾不存在)。"
+
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get(
+            "GOOGLE_API_KEY"
+        )
+        embeddings = GoogleGenerativeAIEmbeddings(
+            model="models/text-embedding-004", google_api_key=api_key
+        )
+
+        # 載入向量資料庫（允許安全加載）
+        vectorstore = FAISS.load_local(
+            index_path, embeddings, allow_dangerous_deserialization=True
+        )
+
+        # 檢索最相關的 3 段內容
+        docs = vectorstore.similarity_search(query, k=3)
+        if not docs:
+            return "查無相關個人文件紀錄。"
+
+        results = [
+            f"• [文件來源: {d.metadata.get('source', '未知')}]\n{d.page_content}"
+            for d in docs
+        ]
+        return "\n\n".join(results)
+    except Exception as e:
+        return f"❌ 知識庫查詢失敗: {str(e)}"
+
+
+# 工具清單彙整（包含新整合的 search_personal_docs）
 tools = [
     get_etf_prices,
     write_to_google_sheets,
     write_to_notion_database,
     send_telegram_message,
     send_email_notification,
+    search_personal_docs,
 ]
 
 
@@ -214,12 +250,9 @@ graph = builder.compile(checkpointer=MemorySaver())
 # ==========================================
 if __name__ == "__main__":
     today_str = datetime.date.today().strftime("%Y-%m-%d")
-    
+
     # 加上 recursion_limit: 10 防止 Agent 進入死迴圈
-    config = {
-        "configurable": {"thread_id": "daily_job"},
-        "recursion_limit": 10
-    }
+    config = {"configurable": {"thread_id": "daily_job"}, "recursion_limit": 10}
 
     user_input = (
         f"今天是 {today_str}。請直接執行以下任務：\n"
