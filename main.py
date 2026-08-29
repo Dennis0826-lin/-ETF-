@@ -186,9 +186,9 @@ if not api_key:
         "請確認 GitHub Repository -> Settings -> Secrets and variables -> Actions 中已新增對應的 Secret。"
     )
 
-# 顯式傳入 api_key，使用 gemini-1.5-flash
+# 顯式傳入 api_key，並將模型名稱改為 gemini-2.0-flash 或 models/gemini-1.5-flash
 llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash",
+    model="gemini-2.0-flash",
     api_key=api_key,
     max_retries=6,
 )
