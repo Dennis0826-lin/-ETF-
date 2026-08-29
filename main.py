@@ -177,10 +177,10 @@ class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
 
 
-# 取得 API Key（優先使用 GEMINI_API_KEY，備用 GOOGLE_API_KEY）
+# 取得 API Key（優先讀取 GEMINI_API_KEY，備用 GOOGLE_API_KEY）
 api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 
-# 使用 gemini-1.5-flash，確保語法完整閉合且配額穩定
+# 修正：括號已閉合，並切換至 gemini-1.5-flash
 llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
     google_api_key=api_key,
@@ -211,10 +211,10 @@ if __name__ == "__main__":
     config = {"configurable": {"thread_id": "daily_job"}}
 
     user_input = (
-        f"今天是 {today_str}。請直接依序執行任務，不要額外問答：\n"
-        "1. 使用 get_etf_prices 取得 00685L、00631L、00878、00918 股價。\n"
-        "2. 將查到的 ETF 數據寫入 write_to_google_sheets 與 write_to_notion_database。\n"
-        "3. 呼叫 send_telegram_message 與 send_email_notification 發送每日報告。"
+        f"今天是 {today_str}。請直接執行以下任務：\n"
+        "1. 使用 get_etf_prices 取得 00685L、00631L、00878、00918 的最新股價與漲跌。\n"
+        "2. 將查到的每支 ETF 數據（日期、標的、價格、漲跌幅）分別寫入 write_to_google_sheets 與 write_to_notion_database。\n"
+        "3. 整理完整的每日 ETF 報告，同時呼叫 send_telegram_message 與 send_email_notification 發送。"
     )
 
     events = graph.stream(
