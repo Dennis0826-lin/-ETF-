@@ -173,7 +173,7 @@ def search_personal_docs(query: str) -> str:
             "GOOGLE_API_KEY"
         )
         embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004", google_api_key=api_key
+            model="text-embedding-004", google_api_key=api_key
         )
 
         # 載入向量資料庫（允許安全加載）
