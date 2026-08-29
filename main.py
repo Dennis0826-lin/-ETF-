@@ -226,9 +226,9 @@ if not api_key:
 # 設定模型為 gemini-1.5-flash，並將重試次數提高至 5 次以應對 API 503 伺服器過載
 # 修改 main.py 中的 llm 設定
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3.6-flash",
+    model="gemini-1.5-flash-latest",
     api_key=api_key,
-    max_retries=5,  # 提高重試次數以應對先前遇到的 503 過載問題
+    max_retries=5,
 )
 llm_with_tools = llm.bind_tools(tools)
 
