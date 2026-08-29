@@ -1,12 +1,32 @@
+cat << 'EOF' > build_vector_db.py
 import os
-from langchain_community.document_loaders import (
-    DirectoryLoader,
-    PyPDFLoader,
-    TextLoader,
-)
+from google import genai
+from google.genai import types
+from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
+from langchain_core.embeddings import Embeddings
+
+class DirectGeminiEmbeddings(Embeddings):
+    def __init__(self, api_key: str):
+        self.client = genai.Client(api_key=api_key)
+        self.model = "text-embedding-004"
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        response = self.client.models.embed_content(
+            model=self.model,
+            contents=texts,
+            config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT")
+        )
+        return [e.values for e in response.embeddings]
+
+    def embed_query(self, text: str) -> list[float]:
+        response = self.client.models.embed_content(
+            model=self.model,
+            contents=text,
+            config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY")
+        )
+        return response.embeddings[0].values
 
 def build_index():
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -14,13 +34,8 @@ def build_index():
     
     if not os.path.exists(docs_dir):
         os.makedirs(docs_dir)
-        print(f"📁 已建立 {docs_dir}/ 資料夾，請放入檔案。")
-        test_file = os.path.join(docs_dir, "test.md")
-        if not os.path.exists(test_file):
-            with open(test_file, 'w', encoding='utf-8') as f:
-                f.write("# 知識庫測試文件\n\n歡迎使用 RAG 向量查詢系統。")
+        print(f"📁 已建立 {docs_dir}/ 資料夾。")
 
-    # 1. 讀取檔案
     documents = []
     print("🔍 正在載入文件...")
     md_loader = DirectoryLoader(docs_dir, glob="**/*.md", loader_cls=TextLoader, loader_kwargs={'encoding': 'utf-8'})
@@ -32,23 +47,17 @@ def build_index():
         print("⚠️ docs/ 資料夾內沒有找到任何檔案。")
         return
 
-    # 2. 切分文字
     print(f"✂️ 切分文字中 (共 {len(documents)} 個檔案)...")
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
     splits = text_splitter.split_documents(documents)
 
-    # 3. 轉向量（改用最穩定的通用模型名稱）
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 錯誤：找不到 GEMINI_API_KEY 環境變數！")
+        print("❌ 錯誤：找不到 GEMINI_API_KEY 或 GOOGLE_API_KEY 環境變數！")
         return
 
-    print("🔄 正在轉換向量...")
-    # 使用 embedding-001 可相容所有 Gemini API 版本與權限
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001",
-        google_api_key=api_key
-    )
+    print("🔄 正在轉換向量 (使用原生 Google GenAI SDK)...")
+    embeddings = DirectGeminiEmbeddings(api_key=api_key)
 
     print("💾 建立 FAISS 向量庫...")
     vectorstore = FAISS.from_documents(splits, embeddings)
@@ -59,3 +68,4 @@ def build_index():
 
 if __name__ == "__main__":
     build_index()
+EOF
