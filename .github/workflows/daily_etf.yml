@@ -2,10 +2,9 @@ name: Daily ETF Report Workflow
 
 on:
   schedule:
-    # 台灣時間下午 1:30 (13:30 CST) = UTC 時間 05:30
-    # 建議設為 '30 5 * * 1-5' (週一至週五執行，避開週末休市)
-    - cron: '30 5 * * 1-5'
-  workflow_dispatch:
+    # 每天定時自動執行 (例如 UTC 09:30 / 台灣時間 17:30)
+    - cron: '30 9 * * 1-5'
+  workflow_dispatch: # 支援在 GitHub 介面上手動點擊執行
 
 jobs:
   run-agent:
