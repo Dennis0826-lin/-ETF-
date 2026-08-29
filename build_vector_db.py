@@ -1,37 +1,12 @@
 import os
-import google.generativeai as genai
-from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader, TextLoader
+from langchain_community.document_loaders import (
+    DirectoryLoader,
+    PyPDFLoader,
+    TextLoader,
+)
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain_core.embeddings import Embeddings
-
-# 自訂直接呼叫 Google 原生 API 的 Embedding Class，避免 LangChain 內部 404 Bug
-class CustomGeminiEmbeddings(Embeddings):
-    def __init__(self, api_key: str):
-        genai.configure(api_key=api_key)
-        self.model_name = "models/text-embedding-004"
-
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        # 批次處理 Avoid API Limit
-        embeddings = []
-        batch_size = 10
-        for i in range(0, len(texts), batch_size):
-            batch_texts = texts[i:i + batch_size]
-            response = genai.embed_content(
-                model=self.model_name,
-                content=batch_texts,
-                task_type="retrieval_document"
-            )
-            embeddings.extend(response['embedding'])
-        return embeddings
-
-    def embed_query(self, text: str) -> list[float]:
-        response = genai.embed_content(
-            model=self.model_name,
-            content=text,
-            task_type="retrieval_query"
-        )
-        return response['embedding']
 
 def build_index():
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,7 +14,7 @@ def build_index():
     
     if not os.path.exists(docs_dir):
         os.makedirs(docs_dir)
-        print(f"📁 已建立 {docs_dir}/ 資料夾，請放入 Markdown 或 PDF 檔案。")
+        print(f"📁 已建立 {docs_dir}/ 資料夾，請放入檔案。")
         test_file = os.path.join(docs_dir, "test.md")
         if not os.path.exists(test_file):
             with open(test_file, 'w', encoding='utf-8') as f:
@@ -62,14 +37,18 @@ def build_index():
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
     splits = text_splitter.split_documents(documents)
 
-    # 3. 轉向量
+    # 3. 轉向量（改用最穩定的通用模型名稱）
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
-        print("❌ 錯誤：找不到 GEMINI_API_KEY 環境變數，請確認有成功 export 設定！")
+        print("❌ 錯誤：找不到 GEMINI_API_KEY 環境變數！")
         return
 
-    print("🔄 正在使用 Google 原生 API 轉換向量...")
-    embeddings = CustomGeminiEmbeddings(api_key=api_key)
+    print("🔄 正在轉換向量...")
+    # 使用 embedding-001 可相容所有 Gemini API 版本與權限
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model="models/embedding-001",
+        google_api_key=api_key
+    )
 
     print("💾 建立 FAISS 向量庫...")
     vectorstore = FAISS.from_documents(splits, embeddings)
