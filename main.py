@@ -229,7 +229,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
-    model_provider="google-genai",
+    api_version="v1",          # 強制指定走正式版 v1 REST API，避免跳至 v1beta 導致 404
     api_key=api_key,
     max_retries=5,
 )
