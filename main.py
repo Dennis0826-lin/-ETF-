@@ -204,11 +204,11 @@ graph = builder.compile(checkpointer=MemorySaver())
 if __name__ == "__main__":
     config = {"configurable": {"thread_id": "daily_job"}}
     user_input = (
-        "請執行以下步驟：\n"
-        "1. 使用 get_etf_prices 查詢 00685L、00631L、00878、00918 的最新股價。\n"
-        "2. 將查到的數據透過 write_to_google_sheets 與 write_to_notion_database 自動同步紀錄。\n"
-        "3. 將整理好的今日 ETF 報告透過 send_telegram_message 與 send_email_notification 發送出去。"
-    )
+    "請直接依序執行以下動作，勿進行多餘問答：\n"
+    "1. 呼叫 get_etf_prices 取得 00685L、00631L、00878、00918 股價。\n"
+    "2. 拿到資料後，直接呼叫 write_to_google_sheets 與 write_to_notion_database 寫入。\n"
+    "3. 最後直接呼叫 send_telegram_message 與 send_email_notification 發送報告。"
+)
 
     events = graph.stream(
         {"messages": [("user", user_input)]}, config, stream_mode="values"
