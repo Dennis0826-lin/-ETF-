@@ -1,6 +1,7 @@
+langchain-core
 langchain-google-genai
 langgraph
-langchain-core
-langchain-community
-requests
 yfinance
+gspread
+google-auth
+requests
