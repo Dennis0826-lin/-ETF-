@@ -1,4 +1,3 @@
-cat << 'EOF' > build_vector_db.py
 import os
 from google import genai
 from google.genai import types
@@ -7,9 +6,11 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_core.embeddings import Embeddings
 
+# 自訂 Embeddings 類別，完全繞過 LangChain 的路徑拼接 Bug
 class DirectGeminiEmbeddings(Embeddings):
     def __init__(self, api_key: str):
         self.client = genai.Client(api_key=api_key)
+        # 直接指定模型名稱，不加 "models/" 前綴
         self.model = "text-embedding-004"
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
@@ -68,4 +69,3 @@ def build_index():
 
 if __name__ == "__main__":
     build_index()
-EOF
