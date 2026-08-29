@@ -177,13 +177,19 @@ class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
 
 
-# 取得 API Key（優先讀取 GEMINI_API_KEY，備用 GOOGLE_API_KEY）
+# 讀取 API Key
 api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 
-# 修正：括號已閉合，並切換至 gemini-1.5-flash
+if not api_key:
+    raise ValueError(
+        "未偵測到 GEMINI_API_KEY 或 GOOGLE_API_KEY！"
+        "請確認 GitHub Repository -> Settings -> Secrets and variables -> Actions 中已新增對應的 Secret。"
+    )
+
+# 顯式傳入 api_key，使用 gemini-1.5-flash
 llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
-    google_api_key=api_key,
+    api_key=api_key,
     max_retries=6,
 )
 llm_with_tools = llm.bind_tools(tools)
