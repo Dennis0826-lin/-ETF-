@@ -186,11 +186,11 @@ if not api_key:
         "請確認 GitHub Repository -> Settings -> Secrets and variables -> Actions 中已新增對應的 Secret。"
     )
 
-# 顯式傳入 api_key，並將模型名稱改為 gemini-2.0-flash 或 models/gemini-1.5-flash
+# 設定模型為 gemini-3.6-flash，將重試次數控制為 2 次
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
+    model="gemini-3.6-flash",
     api_key=api_key,
-    max_retries=6,
+    max_retries=2,
 )
 llm_with_tools = llm.bind_tools(tools)
 
@@ -214,7 +214,12 @@ graph = builder.compile(checkpointer=MemorySaver())
 # ==========================================
 if __name__ == "__main__":
     today_str = datetime.date.today().strftime("%Y-%m-%d")
-    config = {"configurable": {"thread_id": "daily_job"}}
+    
+    # 加上 recursion_limit: 10 防止 Agent 進入死迴圈
+    config = {
+        "configurable": {"thread_id": "daily_job"},
+        "recursion_limit": 10
+    }
 
     user_input = (
         f"今天是 {today_str}。請直接執行以下任務：\n"
