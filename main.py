@@ -1,12 +1,16 @@
-import email.mime.multipart
-import email.mime.text
+import json
 import os
 import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from typing import Annotated, List, TypedDict
+
+import gspread
+from google.oauth2.service_account import Credentials
 from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import END, StateGraph, START
+from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 import requests
@@ -18,7 +22,7 @@ import yfinance as yf
 # ==========================================
 @tool
 def get_etf_prices(symbols: List[str]) -> str:
-    """抓取台股 ETF 價格"""
+    """抓取台股 ETF 價格與漲跌資訊"""
     results = []
     for symbol in symbols:
         ticker_symbol = (
@@ -44,6 +48,71 @@ def get_etf_prices(symbols: List[str]) -> str:
 
 
 @tool
+def write_to_google_sheets(
+    trade_date: str, symbol: str, price: float, change: str
+) -> str:
+    """寫入交易資料至 Google Sheets (ETF每日監控表)"""
+    try:
+        gcp_secret = os.environ.get("GCP_SERVICE_ACCOUNT")
+        if not gcp_secret:
+            return "缺少 GCP_SERVICE_ACCOUNT 環境變數，跳過 Google Sheets 寫入。"
+
+        service_account_info = json.loads(gcp_secret)
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ]
+        creds = Credentials.from_service_account_info(
+            service_account_info, scopes=scopes
+        )
+        gc = gspread.authorize(creds)
+
+        sh = gc.open("ETF每日監控表")
+        worksheet = sh.sheet1
+        worksheet.append_row([trade_date, symbol, str(price), change])
+        return f"✅ 已成功將 {symbol} 寫入 Google Sheets！"
+    except Exception as e:
+        return f"❌ Google Sheets 寫入失敗: {str(e)}"
+
+
+@tool
+def write_to_notion_database(
+    trade_date: str, symbol: str, price: float
+) -> str:
+    """寫入交易資料至 Notion Database"""
+    notion_token = os.environ.get("NOTION_TOKEN")
+    database_id = os.environ.get("NOTION_DATABASE_ID")
+
+    if not notion_token or not database_id:
+        return "缺少 Notion 憑證，跳過 Notion 寫入。"
+
+    headers = {
+        "Authorization": f"Bearer {notion_token}",
+        "Content-Type": "application/json",
+        "Notion-Version": "2022-06-28",
+    }
+
+    payload = {
+        "parent": {"database_id": database_id},
+        "properties": {
+            "Name": {"title": [{"text": {"content": symbol}}]},
+            "Date": {"date": {"start": trade_date}},
+            "Price": {"number": price},
+        },
+    }
+
+    url = "https://api.notion.com/v1/pages"
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        if response.status_code == 200:
+            return f"✅ 已成功將 {symbol} 寫入 Notion Database！"
+        else:
+            return f"❌ Notion 寫入失敗 ({response.status_code}): {response.text}"
+    except Exception as e:
+        return f"❌ Notion API 請求失敗: {str(e)}"
+
+
+@tool
 def send_telegram_message(message: str) -> str:
     """發送訊息至 Telegram"""
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -65,7 +134,7 @@ def send_telegram_message(message: str) -> str:
 
 @tool
 def send_email_notification(subject: str, content: str) -> str:
-    """將報告或通知內容發送至指定 Email 信箱。"""
+    """將報告發送至指定 Email 信箱"""
     sender_email = os.environ.get("SENDER_EMAIL")
     sender_password = os.environ.get("SENDER_PASSWORD")
     receiver_email = os.environ.get("RECEIVER_EMAIL")
@@ -74,12 +143,11 @@ def send_email_notification(subject: str, content: str) -> str:
         return "Email 設定不完整，跳過 Email 發送。"
 
     try:
-        msg = email.mime.multipart.MIMEMultipart()
+        msg = MIMEMultipart()
         msg["From"] = sender_email
         msg["To"] = receiver_email
         msg["Subject"] = subject
-
-        msg.attach(email.mime.text.MIMEText(content, "plain", "utf-8"))
+        msg.attach(MIMEText(content, "plain", "utf-8"))
 
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(sender_email, sender_password)
@@ -90,7 +158,14 @@ def send_email_notification(subject: str, content: str) -> str:
         return f"Email 發送失敗: {str(e)}"
 
 
-tools = [get_etf_prices, send_telegram_message, send_email_notification]
+# 工具清單彙整
+tools = [
+    get_etf_prices,
+    write_to_google_sheets,
+    write_to_notion_database,
+    send_telegram_message,
+    send_email_notification,
+]
 
 
 # ==========================================
@@ -100,10 +175,12 @@ class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
 
 
-# 使用最新支援的 gemini-3.6-flash 模型
+# 設定 Gemini 模型 (修復括號與模型名稱)
 llm = ChatGoogleGenerativeAI(
     model="gemini-3.6-flash",
-    max_retries=6  # 遇到 429 自動重試，給予 API 冷卻時間)
+    google_api_key=os.environ.get("GEMINI_API_KEY"),
+    max_retries=6,
+)
 llm_with_tools = llm.bind_tools(tools)
 
 
@@ -127,8 +204,11 @@ graph = builder.compile(checkpointer=MemorySaver())
 if __name__ == "__main__":
     config = {"configurable": {"thread_id": "daily_job"}}
     user_input = (
-    "請使用 get_etf_prices 查詢 00685L、00631L、00878、00918 的最新股價，"
-    "將整理好的收盤報告同時調用 send_telegram_message 與 send_email_notification 發送出去。")
+        "請執行以下步驟：\n"
+        "1. 使用 get_etf_prices 查詢 00685L、00631L、00878、00918 的最新股價。\n"
+        "2. 將查到的數據透過 write_to_google_sheets 與 write_to_notion_database 自動同步紀錄。\n"
+        "3. 將整理好的今日 ETF 報告透過 send_telegram_message 與 send_email_notification 發送出去。"
+    )
 
     events = graph.stream(
         {"messages": [("user", user_input)]}, config, stream_mode="values"
