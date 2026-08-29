@@ -1,33 +1,8 @@
 import os
-from google import genai
-from google.genai import types
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain_core.embeddings import Embeddings
-
-# 自訂 Embeddings 類別，完全繞過 LangChain 的路徑拼接 Bug
-class DirectGeminiEmbeddings(Embeddings):
-    def __init__(self, api_key: str):
-        self.client = genai.Client(api_key=api_key)
-        # 直接指定模型名稱，不加 "models/" 前綴
-        self.model = "text-embedding-004"
-
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        response = self.client.models.embed_content(
-            model=self.model,
-            contents=texts,
-            config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT")
-        )
-        return [e.values for e in response.embeddings]
-
-    def embed_query(self, text: str) -> list[float]:
-        response = self.client.models.embed_content(
-            model=self.model,
-            contents=text,
-            config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY")
-        )
-        return response.embeddings[0].values
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 def build_index():
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -52,13 +27,8 @@ def build_index():
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
     splits = text_splitter.split_documents(documents)
 
-    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        print("❌ 錯誤：找不到 GEMINI_API_KEY 或 GOOGLE_API_KEY 環境變數！")
-        return
-
-    print("🔄 正在轉換向量 (使用原生 Google GenAI SDK)...")
-    embeddings = DirectGeminiEmbeddings(api_key=api_key)
+    print("🔄 正在使用本地 HuggingFace 模型轉換向量 (不需 API Key)...")
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
     print("💾 建立 FAISS 向量庫...")
     vectorstore = FAISS.from_documents(splits, embeddings)
