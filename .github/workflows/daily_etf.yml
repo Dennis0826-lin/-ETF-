@@ -1,10 +1,10 @@
 name: Daily ETF Report Workflow
 
 on:
+  workflow_dispatch:
   schedule:
-    # 每天定時自動執行 (例如 UTC 09:30 / 台灣時間 17:30)
-    - cron: '30 9 * * 1-5'
-  workflow_dispatch: # 支援在 GitHub 介面上手動點擊執行
+    # 每天台灣時間 13:30 執行 (UTC 05:30)
+    - cron: '30 5 * * *'
 
 jobs:
   run-agent:
@@ -22,11 +22,12 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install langchain-google-genai langgraph yfinance requests gspread google-auth
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Run Main Script
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
