@@ -5,9 +5,12 @@ from main import graph  # 匯入 main.py 中定義好的 LangGraph Agent
 st.set_page_config(page_title="ETF & 個人助理", page_icon="🤖", layout="centered")
 st.title("🤖 我的個人 AI 助理")
 
-# 初始化對話紀錄與 Thread ID
+# 初始化對話紀錄與固定 Session Thread ID
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+if "thread_id" not in st.session_state:
+    st.session_state.thread_id = "streamlit_default_user"
 
 # 渲染歷史對話訊息
 for msg in st.session_state.messages:
@@ -21,15 +24,27 @@ if prompt := st.chat_input("請輸入你的問題（例如：查詢 00878 最新
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # 2. 呼叫 LangGraph Agent 並帶入 config (含 thread_id)
+    # 2. 呼叫 LangGraph Agent
     with st.chat_message("assistant"):
         with st.spinner("思考中並處理工具呼叫..."):
             try:
+                # 構建符合 LangGraph 規範的輸入與 Config
                 inputs = {"messages": [("user", prompt)]}
-                # 加入 config 參數以滿足 Checkpointer 需求
-                config = {"configurable": {"thread_id": "streamlit_session"}}
+                config = {
+                    "configurable": {
+                        "thread_id": st.session_state.thread_id
+                    }
+                }
+                
+                # 執行 Agent 邏輯
                 response = graph.invoke(inputs, config=config)
-                reply = response["messages"][-1].content
+                
+                # 提取最終回答內容
+                if isinstance(response, dict) and "messages" in response:
+                    reply = response["messages"][-1].content
+                else:
+                    reply = str(response)
+
             except Exception as e:
                 reply = f"執行出錯：{str(e)}"
 
