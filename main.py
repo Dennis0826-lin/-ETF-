@@ -240,7 +240,7 @@ builder.add_edge(START, "chatbot")
 builder.add_conditional_edges("chatbot", tools_condition)
 builder.add_edge("tools", "chatbot")
 
-_raw_graph = builder.compile(checkpointer=MemorySaver())
+_raw_graph = builder.compile()
 
 
 # 包裝類別：自動防呆補上 thread_id，解決 Streamlit 呼叫時拋出 Checkpointer 錯誤
