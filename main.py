@@ -5,8 +5,11 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Annotated, List, TypedDict
+
 from dotenv import load_dotenv
+
 load_dotenv()  # 自動讀取 .env 中的環境變數
+
 import gspread
 import requests
 import yfinance as yf
@@ -205,7 +208,7 @@ tools = [
 
 
 # ==========================================
-# 2. Agent 建立 (Lang)
+# 2. Agent 建立 (LangGraph)
 # ==========================================
 class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
@@ -237,7 +240,48 @@ builder.add_edge(START, "chatbot")
 builder.add_conditional_edges("chatbot", tools_condition)
 builder.add_edge("tools", "chatbot")
 
-graph = builder.compile(checkpointer=MemorySaver())
+_raw_graph = builder.compile(checkpointer=MemorySaver())
+
+
+# 包裝類別：自動防呆補上 thread_id，解決 Streamlit 呼叫時拋出 Checkpointer 錯誤
+class SafeGraphWrapper:
+    def __init__(self, inner_graph):
+        self.inner_graph = inner_graph
+
+    def invoke(self, inputs, config=None, **kwargs):
+        if config is None:
+            config = {}
+        else:
+            config = config.copy()
+
+        if "configurable" not in config:
+            config["configurable"] = {}
+        else:
+            config["configurable"] = config["configurable"].copy()
+
+        if "thread_id" not in config["configurable"]:
+            config["configurable"]["thread_id"] = "default_session"
+
+        return self.inner_graph.invoke(inputs, config=config, **kwargs)
+
+    def stream(self, inputs, config=None, **kwargs):
+        if config is None:
+            config = {}
+        else:
+            config = config.copy()
+
+        if "configurable" not in config:
+            config["configurable"] = {}
+        else:
+            config["configurable"] = config["configurable"].copy()
+
+        if "thread_id" not in config["configurable"]:
+            config["configurable"]["thread_id"] = "default_session"
+
+        return self.inner_graph.stream(inputs, config=config, **kwargs)
+
+
+graph = SafeGraphWrapper(_raw_graph)
 
 
 # ==========================================
