@@ -5,7 +5,7 @@ from main import graph  # 匯入 main.py 中定義好的 LangGraph Agent
 st.set_page_config(page_title="ETF & 個人助理", page_icon="🤖", layout="centered")
 st.title("🤖 我的個人 AI 助理")
 
-# 初始化對話紀錄
+# 初始化對話紀錄與 Thread ID
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -21,12 +21,14 @@ if prompt := st.chat_input("請輸入你的問題（例如：查詢 00878 最新
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # 2. 呼叫 LangGraph Agent 並顯示轉圈載入動畫
+    # 2. 呼叫 LangGraph Agent 並帶入 config (含 thread_id)
     with st.chat_message("assistant"):
         with st.spinner("思考中並處理工具呼叫..."):
             try:
                 inputs = {"messages": [("user", prompt)]}
-                response = graph.invoke(inputs)
+                # 加入 config 參數以滿足 Checkpointer 需求
+                config = {"configurable": {"thread_id": "streamlit_session"}}
+                response = graph.invoke(inputs, config=config)
                 reply = response["messages"][-1].content
             except Exception as e:
                 reply = f"執行出錯：{str(e)}"
