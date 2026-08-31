@@ -233,6 +233,7 @@ def chatbot(state: AgentState):
     return {"messages": [llm_with_tools.invoke(state["messages"])]}
 
 
+# main.py 底部
 builder = StateGraph(AgentState)
 builder.add_node("chatbot", chatbot)
 builder.add_node("tools", ToolNode(tools))
@@ -240,7 +241,8 @@ builder.add_edge(START, "chatbot")
 builder.add_conditional_edges("chatbot", tools_condition)
 builder.add_edge("tools", "chatbot")
 
-_raw_graph = builder.compile()
+# 直接匯出 compiled graph
+graph = builder.compile(checkpointer=MemorySaver())
 
 
 # 包裝類別：自動防呆補上 thread_id，解決 Streamlit 呼叫時拋出 Checkpointer 錯誤
