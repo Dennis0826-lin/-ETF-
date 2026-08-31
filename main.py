@@ -707,7 +707,6 @@ def get_debug_info():
 # 不會啟動 Streamlit
 # 只測試 ETF 查價工具
 # ============================================================
-
 if __name__ == "__main__":
 
     print("=" * 70)
@@ -744,7 +743,9 @@ if __name__ == "__main__":
     try:
 
         result = get_etf_prices.invoke(
-            ["00878"]
+            {
+                "symbols": ["00878"]
+            }
         )
 
         print(result)
@@ -765,4 +766,5 @@ if __name__ == "__main__":
     print("=" * 70)
 
     print("測試結束")
+
     print("=" * 70)
