@@ -173,7 +173,7 @@ def search_personal_docs(query: str) -> str:
             "GOOGLE_API_KEY"
         )
         embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004", google_api_key=api_key
+            model="text-embedding-004", google_api_key=api_key
         )
 
         vectorstore = FAISS.load_local(
@@ -218,10 +218,10 @@ if not api_key:
         "請確認 GitHub Repository -> Settings -> Secrets and variables -> Actions 中已新增對應的 Secret。"
     )
 
+# 使用目前 API 正式支援且完美的工具調用模型
 llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash",
+    model="gemini-2.5-flash",
     google_api_key=api_key,
-    api_version="v1",
 )
 llm_with_tools = llm.bind_tools(tools)
 
