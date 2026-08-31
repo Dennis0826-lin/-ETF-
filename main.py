@@ -218,7 +218,7 @@ if not api_key:
         "請確認 GitHub Repository -> Settings -> Secrets and variables -> Actions 中已新增對應的 Secret。"
     )
 
-# 使用目前 API 正式支援且完美的工具調用模型
+# 使用正式支援的 Gemini 2.5 Flash 模型
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     google_api_key=api_key,
