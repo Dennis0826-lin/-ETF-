@@ -5,7 +5,8 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Annotated, List, TypedDict
-
+from dotenv import load_dotenv
+load_dotenv()  # 自動讀取 .env 中的環境變數
 import gspread
 import requests
 import yfinance as yf
