@@ -244,7 +244,12 @@ graph = builder.compile()
 # 3. 執行入口 (每日自動化排程用)
 # ==========================================
 if __name__ == "__main__":
-    today_str = datetime.date.today().strftime("%Y-%m-%d")
+
+    print("=" * 60)
+    print("測試 ETF 查價工具")
+    print("=" * 60)
+
+    print(get_etf_prices.invoke(["00878"]))
 
     user_input = (
         f"今天是 {today_str}。請直接執行以下任務：\n"
