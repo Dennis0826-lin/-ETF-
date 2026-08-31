@@ -205,7 +205,7 @@ tools = [
 
 
 # ==========================================
-# 2. Agent 建立 (LangGraph)
+# 2. Agent 建立 (Lang)
 # ==========================================
 class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
