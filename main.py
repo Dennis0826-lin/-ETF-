@@ -17,7 +17,6 @@ from google.oauth2.service_account import Credentials
 from langchain_community.vectorstores import FAISS
 from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -219,11 +218,11 @@ api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 if not api_key:
     raise ValueError(
         "未偵測到 GEMINI_API_KEY 或 GOOGLE_API_KEY！"
-        "請確認 GitHub Repository -> Settings -> Secrets and variables -> Actions 中已新增對應的 Secret。"
+        "請確認已在環境變數或 .env 中設定金鑰。"
     )
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3.6-flash",
+    model="gemini-1.5-flash",
     google_api_key=api_key,
 )
 llm_with_tools = llm.bind_tools(tools)
@@ -233,7 +232,6 @@ def chatbot(state: AgentState):
     return {"messages": [llm_with_tools.invoke(state["messages"])]}
 
 
-# main.py 底部
 builder = StateGraph(AgentState)
 builder.add_node("chatbot", chatbot)
 builder.add_node("tools", ToolNode(tools))
@@ -241,53 +239,38 @@ builder.add_edge(START, "chatbot")
 builder.add_conditional_edges("chatbot", tools_condition)
 builder.add_edge("tools", "chatbot")
 
-# 移除 checkpointer，交給 Streamlit 原生 session 管理對話紀錄
-graph = builder.compile()
+# 移除 checkpointer，免去特定 configurable 鍵值的強制依賴
+_raw_graph = builder.compile()
 
 
-# 包裝類別：自動防呆補上 thread_id，解決 Streamlit 呼叫時拋出 Checkpointer 錯誤
+# 包裝類別：自動防呆補上 thread_id，確保無論直接呼叫或透過 UI 呼叫都能順暢執行
 class SafeGraphWrapper:
     def __init__(self, inner_graph):
         self.inner_graph = inner_graph
 
     def invoke(self, inputs, config=None, **kwargs):
-        if config is None:
-            config = {}
-        else:
-            config = config.copy()
-
-        if "configurable" not in config:
-            config["configurable"] = {}
-        else:
-            config["configurable"] = config["configurable"].copy()
-
-        if "thread_id" not in config["configurable"]:
-            config["configurable"]["thread_id"] = "default_session"
+        config = (config or {}).copy()
+        configurable = config.get("configurable", {}).copy()
+        configurable.setdefault("thread_id", "default_session")
+        config["configurable"] = configurable
 
         return self.inner_graph.invoke(inputs, config=config, **kwargs)
 
     def stream(self, inputs, config=None, **kwargs):
-        if config is None:
-            config = {}
-        else:
-            config = config.copy()
-
-        if "configurable" not in config:
-            config["configurable"] = {}
-        else:
-            config["configurable"] = config["configurable"].copy()
-
-        if "thread_id" not in config["configurable"]:
-            config["configurable"]["thread_id"] = "default_session"
+        config = (config or {}).copy()
+        configurable = config.get("configurable", {}).copy()
+        configurable.setdefault("thread_id", "default_session")
+        config["configurable"] = configurable
 
         return self.inner_graph.stream(inputs, config=config, **kwargs)
 
 
+# 匯出包裝後的物件供 app.py 匯入使用
 graph = SafeGraphWrapper(_raw_graph)
 
 
 # ==========================================
-# 3. 執行入口
+# 3. 執行入口 (每日自動化排程用)
 # ==========================================
 if __name__ == "__main__":
     today_str = datetime.date.today().strftime("%Y-%m-%d")
