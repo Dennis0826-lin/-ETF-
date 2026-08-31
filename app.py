@@ -1,25 +1,13 @@
 import streamlit as st
-from main import graph  # 匯入 main.py 中定義好的 SafeGraphWrapper 實例
+from main import graph
 
 # 頁面基本設定
 st.set_page_config(page_title="ETF & 個人助理", page_icon="🤖", layout="centered")
 st.title("🤖 我的個人 AI 助理")
 
-
-# 使用 cache_resource 包裝，防止 Streamlit 重新渲染時重複初始化 Graph
-@st.cache_resource
-def get_agent():
-    return graph
-
-
-agent = get_agent()
-
-# 初始化對話紀錄與 Session Thread ID
+# 初始化對話紀錄
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-if "thread_id" not in st.session_state:
-    st.session_state.thread_id = "streamlit_user_session"
 
 # 渲染歷史對話紀錄
 for msg in st.session_state.messages:
@@ -37,15 +25,8 @@ if prompt := st.chat_input("請輸入你的問題（例如：查詢 00878 最新
     with st.chat_message("assistant"):
         with st.spinner("思考中並處理工具呼叫..."):
             try:
-                inputs = {"messages": [("user", prompt)]}
-                config = {
-                    "configurable": {
-                        "thread_id": st.session_state.thread_id
-                    }
-                }
-
-                # 呼叫 SafeGraphWrapper 包裝後的 invoke
-                response = agent.invoke(inputs, config=config)
+                # 直接傳入 State，不需要任何 config 或 thread_id
+                response = graph.invoke({"messages": [("user", prompt)]})
 
                 # 解析最終回應訊息
                 if isinstance(response, dict) and "messages" in response:
