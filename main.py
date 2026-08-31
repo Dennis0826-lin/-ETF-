@@ -222,11 +222,12 @@ if not api_key:
         "請確認 GitHub Repository -> Settings -> Secrets and variables -> Actions 中已新增對應的 Secret。"
     )
 
-# 設定模型為 gemini-3.6-flash，將重試次數控制為 2 次
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3.6-flash",
-    api_key=api_key,
-    max_retries=2,
+    model="gemini-1.5-flash",
+    google_api_key=os.environ.get("GEMINI_API_KEY"),
+    max_retries=5,
 )
 llm_with_tools = llm.bind_tools(tools)
 
