@@ -8,7 +8,7 @@ from typing import Annotated, List, TypedDict
 
 from dotenv import load_dotenv
 
-load_dotenv()  # 自動讀取 .env 中的環境變數
+load_dotenv()
 
 import gspread
 import requests
@@ -207,7 +207,7 @@ tools = [
 
 
 # ==========================================
-# 2. Agent 建立 (LangGraph)
+# 2. Agent 建立 (無 Checkpointer 乾淨版)
 # ==========================================
 class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
@@ -216,10 +216,7 @@ class AgentState(TypedDict):
 api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 
 if not api_key:
-    raise ValueError(
-        "未偵測到 GEMINI_API_KEY 或 GOOGLE_API_KEY！"
-        "請確認已在環境變數或 .env 中設定金鑰。"
-    )
+    raise ValueError("未偵測到 GEMINI_API_KEY 或 GOOGLE_API_KEY！")
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
@@ -239,34 +236,8 @@ builder.add_edge(START, "chatbot")
 builder.add_conditional_edges("chatbot", tools_condition)
 builder.add_edge("tools", "chatbot")
 
-# 移除 checkpointer，免去特定 configurable 鍵值的強制依賴
-_raw_graph = builder.compile()
-
-
-# 包裝類別：自動防呆補上 thread_id，確保無論直接呼叫或透過 UI 呼叫都能順暢執行
-class SafeGraphWrapper:
-    def __init__(self, inner_graph):
-        self.inner_graph = inner_graph
-
-    def invoke(self, inputs, config=None, **kwargs):
-        config = (config or {}).copy()
-        configurable = config.get("configurable", {}).copy()
-        configurable.setdefault("thread_id", "default_session")
-        config["configurable"] = configurable
-
-        return self.inner_graph.invoke(inputs, config=config, **kwargs)
-
-    def stream(self, inputs, config=None, **kwargs):
-        config = (config or {}).copy()
-        configurable = config.get("configurable", {}).copy()
-        configurable.setdefault("thread_id", "default_session")
-        config["configurable"] = configurable
-
-        return self.inner_graph.stream(inputs, config=config, **kwargs)
-
-
-# 匯出包裝後的物件供 app.py 匯入使用
-graph = SafeGraphWrapper(_raw_graph)
+# 關鍵點：完全不帶 checkpointer，徹底杜絕 Checkpointer 相關報錯
+graph = builder.compile()
 
 
 # ==========================================
@@ -275,8 +246,6 @@ graph = SafeGraphWrapper(_raw_graph)
 if __name__ == "__main__":
     today_str = datetime.date.today().strftime("%Y-%m-%d")
 
-    config = {"configurable": {"thread_id": "daily_job"}, "recursion_limit": 10}
-
     user_input = (
         f"今天是 {today_str}。請直接執行以下任務：\n"
         "1. 使用 get_etf_prices 取得 00685L、00631L、00878、00918 的最新股價與漲跌。\n"
@@ -284,9 +253,7 @@ if __name__ == "__main__":
         "3. 整理完整的每日 ETF 報告，同時呼叫 send_telegram_message 與 send_email_notification 發送。"
     )
 
-    events = graph.stream(
-        {"messages": [("user", user_input)]}, config, stream_mode="values"
-    )
+    events = graph.stream({"messages": [("user", user_input)]})
     for event in events:
         pass
     print("今日排程執行完成！")
