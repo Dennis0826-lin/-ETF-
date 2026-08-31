@@ -222,8 +222,11 @@ if not api_key:
         "請確認 GitHub Repository -> Settings -> Secrets and variables -> Actions 中已新增對應的 Secret。"
     )
 
+import os
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
+    model="gemini-3.6-flash",
     google_api_key=os.environ.get("GEMINI_API_KEY")
 )
 llm_with_tools = llm.bind_tools(tools)
