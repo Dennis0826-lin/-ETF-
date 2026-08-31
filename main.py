@@ -7,6 +7,8 @@ from email.mime.text import MIMEText
 from typing import Annotated, List, TypedDict
 
 import gspread
+import requests
+import yfinance as yf
 from google.oauth2.service_account import Credentials
 from langchain_community.vectorstores import FAISS
 from langchain_core.tools import tool
@@ -15,8 +17,6 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
-import requests
-import yfinance as yf
 
 
 # ==========================================
@@ -176,12 +176,10 @@ def search_personal_docs(query: str) -> str:
             model="models/text-embedding-004", google_api_key=api_key
         )
 
-        # 載入向量資料庫（允許安全加載）
         vectorstore = FAISS.load_local(
             index_path, embeddings, allow_dangerous_deserialization=True
         )
 
-        # 檢索最相關的 3 段內容
         docs = vectorstore.similarity_search(query, k=3)
         if not docs:
             return "查無相關個人文件紀錄。"
@@ -195,7 +193,6 @@ def search_personal_docs(query: str) -> str:
         return f"❌ 知識庫查詢失敗: {str(e)}"
 
 
-# 工具清單彙整（包含新整合的 search_personal_docs）
 tools = [
     get_etf_prices,
     write_to_google_sheets,
@@ -213,7 +210,6 @@ class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
 
 
-# 讀取 API Key
 api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 
 if not api_key:
@@ -222,12 +218,10 @@ if not api_key:
         "請確認 GitHub Repository -> Settings -> Secrets and variables -> Actions 中已新增對應的 Secret。"
     )
 
-import os
-from langchain_google_genai import ChatGoogleGenerativeAI
-
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3.6-flash",
-    google_api_key=os.environ.get("GEMINI_API_KEY")
+    model="gemini-1.5-flash",
+    google_api_key=api_key,
+    api_version="v1",
 )
 llm_with_tools = llm.bind_tools(tools)
 
@@ -252,7 +246,6 @@ graph = builder.compile(checkpointer=MemorySaver())
 if __name__ == "__main__":
     today_str = datetime.date.today().strftime("%Y-%m-%d")
 
-    # 加上 recursion_limit: 10 防止 Agent 進入死迴圈
     config = {"configurable": {"thread_id": "daily_job"}, "recursion_limit": 10}
 
     user_input = (
