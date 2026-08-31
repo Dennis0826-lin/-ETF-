@@ -65,7 +65,7 @@ def write_to_google_sheets(
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive",
         ]
-        creds = Credentials._service_account_info(
+        creds = Credentials.from_service_account_info(
             service_account_info, scopes=scopes
         )
         gc = gspread.authorize(creds)
@@ -173,8 +173,7 @@ def search_personal_docs(query: str) -> str:
             "GOOGLE_API_KEY"
         )
         embeddings = GoogleGenerativeAIEmbeddings(
-            model="text-embedding-004", 
-            google_api_key=api_key
+            model="models/text-embedding-004", google_api_key=api_key
         )
 
         # 載入向量資料庫（允許安全加載）
@@ -223,12 +222,11 @@ if not api_key:
         "請確認 GitHub Repository -> Settings -> Secrets and variables -> Actions 中已新增對應的 Secret。"
     )
 
-# 設定模型為 gemini-1.5-flash，並將重試次數提高至 5 次以應對 API 503 伺服器過載
-# 修改 main.py 中的 llm 設定
+# 設定模型為 gemini-3.6-flash，將重試次數控制為 2 次
 llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash-latest",
+    model="gemini-3.6-flash",
     api_key=api_key,
-    max_retries=5,
+    max_retries=2,
 )
 llm_with_tools = llm.bind_tools(tools)
 
