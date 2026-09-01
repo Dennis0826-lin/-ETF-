@@ -742,11 +742,9 @@ if __name__ == "__main__":
 
     try:
 
-        result = get_etf_prices.invoke(
-            {
-                "symbols": ["00878"]
-            }
-        )
+        result =get_etf_prices.invoke({
+    "symbols": ["00878"]
+})
 
         print(result)
 
