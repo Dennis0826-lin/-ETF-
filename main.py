@@ -14,6 +14,8 @@ import datetime
 import json
 import os
 import smtplib
+
+from tavily import TavilyClient
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Annotated, List, TypedDict
