@@ -662,6 +662,7 @@ def search_personal_docs(
 
 tools = [
     get_etf_prices,
+    search_web,
     write_to_google_sheets,
     write_to_notion_database,
     send_telegram_message,
