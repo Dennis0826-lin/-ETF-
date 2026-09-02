@@ -193,14 +193,96 @@ def get_etf_prices(symbols: List[str]) -> str:
 
     return "\n".join(results)
 
+# ============================================================
+# 3. Web Search - Tavily
+# ============================================================
 
+@tool
+def search_web(query: str) -> str:
+    """
+    使用 Tavily 搜尋最新網路資訊。
+    適合查詢最新股市新聞、ETF消息、公司公告、
+    技術文件及其他需要即時網路資訊的問題。
+    """
+
+    tavily_api_key = os.environ.get(
+        "TAVILY_API_KEY"
+    )
+
+    if not tavily_api_key:
+        return (
+            "❌ 找不到 TAVILY_API_KEY。\n"
+            "請確認 .env 已設定：\n"
+            "TAVILY_API_KEY=你的API_KEY"
+        )
+
+    try:
+
+        client = TavilyClient(
+            api_key=tavily_api_key
+        )
+
+        response = client.search(
+            query=query,
+            search_depth="advanced",
+            max_results=5
+        )
+
+        results = response.get(
+            "results",
+            []
+        )
+
+        if not results:
+            return (
+                f"⚠️ Tavily 找不到與「{query}」"
+                "相關的網路資料。"
+            )
+
+        output = []
+
+        for i, result in enumerate(
+            results,
+            start=1
+        ):
+
+            title = result.get(
+                "title",
+                "無標題"
+            )
+
+            url = result.get(
+                "url",
+                ""
+            )
+
+            content = result.get(
+                "content",
+                ""
+            )
+
+            output.append(
+                f"[{i}] {title}\n"
+                f"URL: {url}\n"
+                f"{content}"
+            )
+
+        return "\n\n".join(output)
+
+    except Exception as e:
+
+        return (
+            f"❌ Tavily 搜尋失敗："
+            f"{type(e).__name__}: {str(e)}"
+        )
+        
 # ============================================================
 # 3. Google Sheets
 # ============================================================
 
 @tool
 def write_to_google_sheets(
-    trade_date: str,
+    trade_date: str,    
     symbol: str,
     price: float,
     change: str
