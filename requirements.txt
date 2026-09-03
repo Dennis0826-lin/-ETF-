@@ -14,3 +14,4 @@ docx2txt
 TextLoader
 pandas
 openpyxl
+tavily-python
