@@ -612,10 +612,9 @@ def search_personal_docs(
                 "❌ 找不到 Gemini API Key。"
             )
 
-        embeddings = GoogleGenerativeAIEmbeddings(
-            model="text-embedding-004",
-            google_api_key=api_key
-        )
+        embeddings = HuggingFaceEmbeddings(
+    model_name="all-MiniLM-L6-v2"
+)
 
         vectorstore = FAISS.load_local(
             index_path,
