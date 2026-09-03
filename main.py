@@ -844,7 +844,7 @@ if __name__ == "__main__":
             str(e)
         )
 
-       print()
+           print()
     print("=" * 70)
     print("開始測試 Gemini 3.6 Flash + LangGraph + Tool Calling...")
     print("=" * 70)
@@ -869,17 +869,23 @@ if __name__ == "__main__":
         print()
 
         for message in result["messages"]:
+
             print(
                 f"[{type(message).__name__}]"
             )
+
             print(
                 message.content
             )
+
             print()
 
     except Exception as e:
 
-        print("❌ Gemini + LangGraph 測試失敗：")
+        print(
+            "❌ Gemini + LangGraph 測試失敗："
+        )
+
         print(
             type(e).__name__,
             str(e)
