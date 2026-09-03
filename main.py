@@ -845,21 +845,21 @@ if __name__ == "__main__":
         )
 
     print()
-print("=" * 70)
-print("開始測試 Gemini 3.6 Flash...")
-print("=" * 70)
-print()
+    print("=" * 70)
+    print("開始測試 Gemini 3.6 Flash...")
+    print("=" * 70)
+    print()
 
-try:
-    result = llm_with_tools.invoke([
-        {
-            "role": "user",
-            "content": "請查詢 00878 最新價格，並告訴我目前價格與漲跌幅。"
-        }
-    ])
+    try:
 
-    print(result)
+        response = llm.invoke(
+            "請簡單回答：Gemini 3.6 Flash API 測試成功。"
+        )
 
-except Exception as e:
-    print("❌ Gemini 測試失敗：")
-    print(type(e).__name__, str(e))
+        print("Gemini 回應：")
+        print(response.content)
+
+    except Exception as e:
+
+        print("❌ Gemini 測試失敗：")
+        print(type(e).__name__, str(e))
