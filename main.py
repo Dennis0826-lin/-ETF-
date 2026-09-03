@@ -28,6 +28,7 @@ from dotenv import load_dotenv
 
 from google.oauth2.service_account import Credentials
 
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.tools import tool
 from langchain_google_genai import (
