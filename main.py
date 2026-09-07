@@ -33,10 +33,6 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-from google.genai.types import (
-    Tool as GoogleTool,
-    GoogleSearch,
-)
 
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
@@ -669,6 +665,7 @@ def search_personal_docs(
 
 tools = [
     get_etf_prices,
+    search_web,
     write_to_google_sheets,
     write_to_notion_database,
     send_telegram_message,
@@ -676,9 +673,6 @@ tools = [
     search_personal_docs,
 ]
 
-search_web_tool = GoogleTool(
-    google_search=GoogleSearch()
-)
 
 
 # ============================================================
