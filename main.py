@@ -719,7 +719,7 @@ llm_with_custom_tools = llm.bind_tools(tools)
 
 # 6 個 Python Tools + Google Search
 llm_with_tools = llm.bind_tools(
-    tools + [search_web_tool]
+    tools
 )
 
 llm_with_tools = llm.bind_tools(tools)
