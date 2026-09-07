@@ -703,7 +703,8 @@ llm = ChatGoogleGenerativeAI(
     google_api_key=GEMINI_API_KEY,
 )
 
-llm_with_custom_tools = llm.bind_tools(tools)
+# 只使用 Python Tools
+llm_with_tools = llm.bind_tools(tools)
 
 
 # ============================================================
