@@ -730,14 +730,12 @@ llm_with_tools = llm.bind_tools(tools)
 # ============================================================
 
 def chatbot(state: AgentState):
+    if SEARCH_WEB_ENABLED:
+        response = llm_with_tools.invoke(state["messages"])
+    else:
+        response = llm_with_custom_tools.invoke(state["messages"])
 
-    response = llm_with_tools.invoke(
-        state["messages"]
-    )
-
-    return {
-        "messages": [response]
-    }
+    return {"messages": [response]}
 
 
 # ============================================================
