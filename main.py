@@ -709,7 +709,6 @@ def chatbot(state: AgentState):
         "messages": [response]
     }
 
-
 # ============================================================
 # 12. 建立 LangGraph
 #
