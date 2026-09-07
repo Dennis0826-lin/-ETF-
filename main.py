@@ -568,7 +568,6 @@ def send_email_notification(
         return "✅ Email 通知發送成功！"
 
     except Exception as e:
-
         return (
             f"❌ Email 發送失敗："
             f"{type(e).__name__}: {str(e)}"
@@ -586,9 +585,7 @@ def search_personal_docs(
     """
     查詢個人專屬知識庫。
     """
-
     try:
-
         index_path = "faiss_index"
 
         if not os.path.exists(index_path):
