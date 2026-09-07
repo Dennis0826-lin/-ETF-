@@ -32,8 +32,6 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
-
-
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -673,8 +671,6 @@ tools = [
     search_personal_docs,
 ]
 
-
-
 # ============================================================
 # 9. Agent State
 # ============================================================
@@ -696,7 +692,6 @@ llm = ChatGoogleGenerativeAI(
     google_api_key=GEMINI_API_KEY,
 )
 
-# 只使用 Python Tools
 llm_with_tools = llm.bind_tools(tools)
 
 
@@ -705,11 +700,14 @@ llm_with_tools = llm.bind_tools(tools)
 # ============================================================
 
 def chatbot(state: AgentState):
+
     response = llm_with_tools.invoke(
         state["messages"]
     )
 
-    return {"messages": [response]}
+    return {
+        "messages": [response]
+    }
 
 
 # ============================================================
@@ -782,7 +780,6 @@ def get_debug_info():
         "checkpointer_is_none": checkpointer is None,
         "tools": [t.name for t in tools],
     }
-
 
 # ============================================================
 # 15. 直接執行 main.py 時的測試
