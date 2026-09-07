@@ -707,7 +707,11 @@ class AgentState(TypedDict):
 llm = ChatGoogleGenerativeAI(
     model="gemini-3.6-flash",
     google_api_key=GEMINI_API_KEY,
-    )
+)
+
+llm_with_tools = llm.bind_tools(
+    tools + [search_web_tool]
+)
 
 llm_with_tools = llm.bind_tools(tools)
 
