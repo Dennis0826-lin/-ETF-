@@ -690,7 +690,6 @@ class AgentState(TypedDict):
 # 完全不使用 Checkpointer
 # ============================================================
 
-SEARCH_WEB_ENABLED = False
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-3.6-flash",
