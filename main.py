@@ -800,9 +800,10 @@ def get_debug_info():
         "checkpointer": str(checkpointer),
         "checkpointer_is_none": checkpointer is None,
         "tools": [
-            t.name for t in tools
-        ],
-    }
+    t.name for t in tools
+] + [
+    "google_search"
+],
 
 
 # ============================================================
