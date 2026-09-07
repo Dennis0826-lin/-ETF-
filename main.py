@@ -676,14 +676,6 @@ tools = [
     search_personal_docs,
 ]
 
-
-# ------------------------------------------------------------
-# 8-2. Gemini Built-in Google Search
-#
-# Google Search 不交給 LangGraph ToolNode，
-# 而是由 Gemini API 原生執行。
-# ------------------------------------------------------------
-
 search_web_tool = GoogleTool(
     google_search=GoogleSearch()
 )
