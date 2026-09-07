@@ -662,15 +662,31 @@ def search_personal_docs(
 # 8. Tools 集合
 # ============================================================
 
+# ------------------------------------------------------------
+# 8-1. Python Custom Tools
+#     這些工具由 LangGraph ToolNode 執行
+# ------------------------------------------------------------
+
 tools = [
     get_etf_prices,
-    search_web,
     write_to_google_sheets,
     write_to_notion_database,
     send_telegram_message,
     send_email_notification,
     search_personal_docs,
 ]
+
+
+# ------------------------------------------------------------
+# 8-2. Gemini Built-in Google Search
+#
+# Google Search 不交給 LangGraph ToolNode，
+# 而是由 Gemini API 原生執行。
+# ------------------------------------------------------------
+
+search_web_tool = GoogleTool(
+    google_search=GoogleSearch()
+)
 
 
 # ============================================================
