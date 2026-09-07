@@ -706,7 +706,7 @@ llm_with_tools = llm.bind_tools(tools)
 # ============================================================
 
 def chatbot(state: AgentState):
-    response = llm_with_custom_tools.invoke(
+    response = llm_with_tools.invoke(
         state["messages"]
     )
 
@@ -781,11 +781,8 @@ def get_debug_info():
         "main_file": os.path.abspath(__file__),
         "checkpointer": str(checkpointer),
         "checkpointer_is_none": checkpointer is None,
-        "tools": [
-    t.name for t in tools
-] + [
-    "google_search"
-],
+        "tools": [t.name for t in tools],
+    }
 
 
 # ============================================================
