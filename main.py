@@ -696,25 +696,14 @@ class AgentState(TypedDict):
 # 完全不使用 Checkpointer
 # ============================================================
 
-SEARCH_WEB_ENABLED = os.environ.get(
-    "ENABLE_GOOGLE_SEARCH",
-    "false"
-).lower() == "true"
+SEARCH_WEB_ENABLED = False
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-3.6-flash",
     google_api_key=GEMINI_API_KEY,
 )
 
-# 6 個 Python Tools
 llm_with_custom_tools = llm.bind_tools(tools)
-
-# 6 個 Python Tools + Google Search
-llm_with_tools = llm.bind_tools(
-    tools
-)
-
-llm_with_tools = llm.bind_tools(tools)
 
 
 # ============================================================
