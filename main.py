@@ -15,7 +15,7 @@ import json
 import os
 import smtplib
 
-from tavily import TavilyClient
+from tavily import TAVILYClient
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Annotated, List, TypedDict
@@ -191,7 +191,7 @@ def get_etf_prices(symbols: List[str]) -> str:
     return "\n".join(results)
 
 # ============================================================
-# 3. Web Search - Tavily
+# 3. Web Search - 
 # ============================================================
 
 @tool
@@ -202,11 +202,11 @@ def search_web(query: str) -> str:
     技術文件及其他需要即時網路資訊的問題。
     """
 
-    tavily_api_key = os.environ.get(
+    TAVILY_API_KEY = os.environ.get(
         "TAVILY_API_KEY"
     )
 
-    if not tavily_api_key:
+    if not TAVILY_API_KEY:
         return (
             "❌ 找不到 TAVILY_API_KEY。\n"
             "請確認 .env 已設定：\n"
@@ -215,8 +215,8 @@ def search_web(query: str) -> str:
 
     try:
 
-        client = TavilyClient(
-            api_key=tavily_api_key
+        client = TAVILYClient(
+            api_key=TAVILY_API_KEY
         )
 
         response = client.search(
@@ -232,7 +232,7 @@ def search_web(query: str) -> str:
 
         if not results:
             return (
-                f"⚠️ Tavily 找不到與「{query}」"
+                f"⚠️ TAVILY 找不到與「{query}」"
                 "相關的網路資料。"
             )
 
@@ -269,7 +269,7 @@ def search_web(query: str) -> str:
     except Exception as e:
 
         return (
-            f"❌ Tavily 搜尋失敗："
+            f"❌ TAVILY 搜尋失敗："
             f"{type(e).__name__}: {str(e)}"
         )
         
