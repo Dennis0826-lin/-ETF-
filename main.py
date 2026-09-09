@@ -843,17 +843,20 @@ if __name__ == "__main__":
     print("=" * 70)
     print()
 
-    try:
+        try:
 
         result = graph.invoke({
             "messages": [
                 {
                     "role": "user",
-                   "content": (
-    "請查詢我的個人 ETF 知識庫，"
-    "告訴我目前 00878、00918、00631L、00685L "
-    "各持有幾張，以及各自的平均成本。"
-)
+                    "content": (
+                        "請查詢我的個人 ETF 知識庫，"
+                        "告訴我目前 00878、00918、00631L、00685L "
+                        "各持有幾張，以及各自的平均成本。"
+                    )
+                }
+            ]
+        })
                
         print("Gemini + LangGraph 最終回應：")
         print()
