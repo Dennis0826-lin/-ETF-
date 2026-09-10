@@ -660,6 +660,8 @@ def search_personal_docs(
 
 tools = [
     get_etf_prices,
+    calculate_portfolio,
+    build_telegram_report,
     search_web,
     write_to_google_sheets,
     write_to_notion_database,
@@ -888,3 +890,37 @@ if __name__ == "__main__":
     print("=" * 70)
     print("測試結束")
     print("=" * 70)
+
+@tool
+def build_telegram_report(
+    trade_date: str,
+    market_summary: str,
+    portfolio_summary: str
+) -> str:
+    """
+    建立固定格式的 ETF Telegram 每日監控報告。
+    """
+
+    report = f"""📊 ETF 每日監控
+{trade_date}
+
+━━━━━━━━━━━━━━
+📈 今日行情
+━━━━━━━━━━━━━━
+
+{market_summary}
+
+━━━━━━━━━━━━━━
+💰 投資組合
+━━━━━━━━━━━━━━
+
+{portfolio_summary}
+
+━━━━━━━━━━━━━━
+📋 Google Sheets
+━━━━━━━━━━━━━━
+
+✅ 今日資料已更新
+"""
+
+    return report
