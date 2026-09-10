@@ -640,6 +640,10 @@ def send_telegram_message(
             f"{type(e).__name__}: {str(e)}"
         )
 
+# ============================================================
+# 5-1. Telegram 報告格式工具
+# ============================================================
+
 @tool
 def build_telegram_report(
     trade_date: str,
