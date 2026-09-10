@@ -191,6 +191,147 @@ def get_etf_prices(symbols: List[str]) -> str:
     return "\n".join(results)
 
 # ============================================================
+# 2-1. ETF 投資組合計算工具
+# ============================================================
+
+@tool
+def calculate_portfolio(holdings: List[dict]) -> str:
+    """
+    根據 ETF 持有張數、平均成本與最新價格，
+    計算投入成本、目前市值、未實現損益與報酬率。
+
+    holdings 格式：
+
+    [
+        {
+            "symbol": "00918",
+            "shares": 200,
+            "avg_cost": 22.70,
+            "current_price": 35.38
+        }
+    ]
+    """
+
+    if not holdings:
+        return "❌ 沒有提供投資組合資料。"
+
+    results = []
+
+    total_cost = 0.0
+    total_market_value = 0.0
+
+    for item in holdings:
+
+        try:
+
+            symbol = str(
+                item["symbol"]
+            ).strip().upper()
+
+            shares = float(
+                item["shares"]
+            )
+
+            avg_cost = float(
+                item["avg_cost"]
+            )
+
+            current_price = float(
+                item["current_price"]
+            )
+
+            # 一張 ETF = 1,000 股
+            cost = (
+                shares
+                * 1000
+                * avg_cost
+            )
+
+            market_value = (
+                shares
+                * 1000
+                * current_price
+            )
+
+            profit = (
+                market_value
+                - cost
+            )
+
+            if cost != 0:
+
+                return_rate = (
+                    profit
+                    / cost
+                    * 100
+                )
+
+            else:
+
+                return_rate = 0.0
+
+            sign = (
+                "+"
+                if profit >= 0
+                else ""
+            )
+
+            results.append(
+                f"• {symbol}: "
+                f"持有 {shares:.0f} 張，"
+                f"投入成本 {cost:,.0f} 元，"
+                f"目前市值 {market_value:,.0f} 元，"
+                f"未實現損益 {sign}{profit:,.0f} 元，"
+                f"報酬率 {return_rate:+.2f}%"
+            )
+
+            total_cost += cost
+            total_market_value += market_value
+
+        except Exception as e:
+
+            results.append(
+                f"• {item.get('symbol', 'UNKNOWN')}: "
+                f"❌ 計算失敗："
+                f"{type(e).__name__}: {str(e)}"
+            )
+
+    total_profit = (
+        total_market_value
+        - total_cost
+    )
+
+    if total_cost != 0:
+
+        total_return_rate = (
+            total_profit
+            / total_cost
+            * 100
+        )
+
+    else:
+
+        total_return_rate = 0.0
+
+    sign = (
+        "+"
+        if total_profit >= 0
+        else ""
+    )
+
+    results.append("")
+
+    results.append(
+        f"📊 投資組合總計："
+        f"投入成本 {total_cost:,.0f} 元，"
+        f"目前市值 {total_market_value:,.0f} 元，"
+        f"未實現損益 {sign}{total_profit:,.0f} 元，"
+        f"總報酬率 {total_return_rate:+.2f}%"
+    )
+
+    return "\n".join(results)
+
+# ============================================================
 # 3. Web Search - 
 # ============================================================
 
