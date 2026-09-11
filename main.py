@@ -786,11 +786,10 @@ def build_telegram_report(
 {portfolio_summary}
 
 ━━━━━━━━━━━━━━
-📋 Google Sheets
+🤖 AI Agent
 ━━━━━━━━━━━━━━
 
-✅ 今日資料已更新
-"""
+✅ ETF 每日監控報告已建立
 
     return report
 
