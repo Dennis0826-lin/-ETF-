@@ -1,4 +1,3 @@
-```python
 # ============================================================
 # main.py
 # ETF 個人 AI 助理核心
@@ -10,6 +9,7 @@
 # 4. ETF 價格使用 yfinance history()
 # 5. 保留 Google Sheets / Notion / Telegram / Email / FAISS
 # 6. Telegram 支援固定格式每日監控報告
+# 7. 支援 GitHub Actions 每日自動執行
 # ============================================================
 
 
@@ -30,8 +30,8 @@ import yfinance as yf
 
 from dotenv import load_dotenv
 
-from .mime.multipart import MIMEMultipart
-from .mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from google.oauth2.service_account import Credentials
 
@@ -756,8 +756,9 @@ def send_telegram_message(
             f"{type(e).__name__}: {str(e)}"
         )
 
+
 # ============================================================
-# Telegram 報告格式工具
+# 9. Telegram 報告格式工具
 # ============================================================
 
 @tool
@@ -790,6 +791,7 @@ def build_telegram_report(
 ━━━━━━━━━━━━━━
 
 ✅ ETF 每日監控報告已建立
+"""
 
     return report
 
@@ -1114,174 +1116,180 @@ def get_debug_info():
 
 
 # ============================================================
-# 19. 直接執行 main.py 時的測試
+# 19. ETF 每日自動監控流程
 #
-# python main.py
+# GitHub Actions / python main.py
 #
-# 不會啟動 Streamlit
-# 只執行基本測試
+# 執行流程：
+#
+# get_etf_prices
+#       ↓
+# calculate_portfolio
+#       ↓
+# build_telegram_report
+#       ↓
+# write_to_google_sheets
+#       ↓
+# send_telegram_message
+#
+# 注意：
+# 本流程不使用：
+# - search_web
+# - write_to_notion_database
+# - send_email_notification
+# - search_personal_docs
 # ============================================================
 
-if __name__ == "__main__":
+def run_daily_etf_monitor():
+
+    daily_prompt = """
+請執行完整的 ETF 每日監控流程。
+
+【第一步：取得 ETF 行情】
+
+使用 get_etf_prices 查詢：
+
+00918
+00878
+00631L
+00685L
+
+請取得：
+
+- 最新價格
+- 漲跌金額
+- 漲跌幅
+- 最新交易日期
+
+【第二步：計算投資組合】
+
+使用 calculate_portfolio。
+
+我的目前持倉：
+
+00918：200 張，平均成本 22.70 元
+00878：120 張，平均成本 19.65 元
+00631L：37 張，平均成本 28.00 元
+00685L：115 張，平均成本 12.13 元
+
+請計算：
+
+- 各 ETF 投入成本
+- 各 ETF 目前市值
+- 各 ETF 未實現損益
+- 各 ETF 報酬率
+- 投資組合總投入成本
+- 投資組合總市值
+- 投資組合總未實現損益
+- 投資組合總報酬率
+
+【第三步：建立 Telegram 報告】
+
+使用 build_telegram_report。
+
+trade_date：
+使用最新交易日期。
+
+market_summary：
+包含四檔 ETF 的：
+
+- 最新價格
+- 漲跌金額
+- 漲跌幅
+
+portfolio_summary：
+包含：
+
+- 各 ETF 投入成本
+- 各 ETF 目前市值
+- 各 ETF 未實現損益
+- 各 ETF 報酬率
+- 投資組合總投入成本
+- 投資組合總市值
+- 投資組合總未實現損益
+- 投資組合總報酬率
+
+【第四步：寫入 Google Sheets】
+
+使用 write_to_google_sheets。
+
+請將四檔 ETF 都寫入 Google Sheets。
+
+每一檔 ETF 都必須寫入：
+
+- trade_date
+- symbol
+- price
+- change
+
+四檔 ETF：
+
+00918
+00878
+00631L
+00685L
+
+四檔都必須成功寫入。
+
+【第五步：發送 Telegram】
+
+使用 send_telegram_message。
+
+請將第三步建立的完整 Telegram 報告原封不動發送出去。
+
+【重要限制】
+
+這一次必須完成以上五個步驟。
+
+不要使用：
+
+- write_to_notion_database
+- send_email_notification
+- search_web
+- search_personal_docs
+
+請嚴格依照以下順序執行：
+
+get_etf_prices
+→ calculate_portfolio
+→ build_telegram_report
+→ write_to_google_sheets
+→ send_telegram_message
+
+不要自行增加其他 Tool。
+
+如果某一個 Tool 執行失敗，請在最終結果中明確指出：
+
+1. 哪一個 Tool 失敗
+2. 失敗原因
+3. 哪些步驟已成功
+4. 哪些步驟未完成
+
+不要假設失敗的 Tool 已經成功。
+"""
 
     print("=" * 70)
-
-    print(
-        "ETF AI Assistant - main.py 測試"
-    )
-
+    print("🚀 ETF AI Agent - Daily Monitor")
     print("=" * 70)
-
     print()
 
-    # --------------------------------------------------------
-    # 顯示目前 main.py
-    # --------------------------------------------------------
-
-    print("目前 main.py：")
-
-    print(
-        os.path.abspath(__file__)
-    )
-
+    print("📌 執行模式：")
+    print("   GitHub Actions / python main.py")
     print()
 
-    # --------------------------------------------------------
-    # Graph Checkpointer
-    # --------------------------------------------------------
-
-    print(
-        "Graph Checkpointer："
-    )
-
-    print(
-        getattr(
-            graph,
-            "checkpointer",
-            None
-        )
-    )
-
+    print("📌 預定流程：")
+    print("   1. get_etf_prices")
+    print("   2. calculate_portfolio")
+    print("   3. build_telegram_report")
+    print("   4. write_to_google_sheets")
+    print("   5. send_telegram_message")
     print()
 
-    # --------------------------------------------------------
-    # Tool 清單
-    # --------------------------------------------------------
-
-    print("目前 Tools：")
-
-    for tool_item in tools:
-
-        print(
-            f"  - {tool_item.name}"
-        )
-
-    print()
-
-    # --------------------------------------------------------
-    # Test 1：ETF 查價
-    # --------------------------------------------------------
-
-    print(
-        "開始測試 00878 ETF 查價..."
-    )
-
-    print()
-
-    try:
-
-        result = (
-            get_etf_prices.invoke(
-                {
-                    "symbols": [
-                        "00878"
-                    ]
-                }
-            )
-        )
-
-        print(result)
-
-    except Exception as e:
-
-        print(
-            "❌ ETF 查價測試失敗："
-        )
-
-        print(
-            type(e).__name__,
-            str(e)
-        )
-
-    print()
-
-    # --------------------------------------------------------
-    # Test 2：Telegram Report Tool
-    # --------------------------------------------------------
-
-    print(
-        "開始測試 Telegram 報告格式..."
-    )
-
-    print()
-
-    try:
-
-        report = (
-            build_telegram_report.invoke(
-                {
-                    "trade_date": (
-                        datetime.date.today()
-                        .strftime("%Y-%m-%d")
-                    ),
-                    "market_summary": (
-                        "00918   35.38  🔻 -0.17%\n"
-                        "00878   34.15  🔺 +0.23%\n"
-                        "00631L  37.15  🔻 -0.91%\n"
-                        "00685L  12.26  🔻 -0.73%"
-                    ),
-                    "portfolio_summary": (
-                        "投入成本\n"
-                        "$9,328,950\n\n"
-                        "目前市值\n"
-                        "$13,958,450\n\n"
-                        "未實現損益\n"
-                        "+$4,629,500\n\n"
-                        "總報酬率\n"
-                        "+49.63%"
-                    ),
-                }
-            )
-        )
-
-        print(report)
-
-    except Exception as e:
-
-        print(
-            "❌ Telegram 報告格式測試失敗："
-        )
-
-        print(
-            type(e).__name__,
-            str(e)
-        )
-
-    print()
-
-    # --------------------------------------------------------
-    # Test 3：Gemini + LangGraph
-    # --------------------------------------------------------
-
-    print("=" * 70)
-
-    print(
-        "開始測試 Gemini 3.6 Flash "
-        "+ LangGraph + Tool Calling..."
-    )
-
-    print("=" * 70)
-
+    print("📌 不使用：")
+    print("   - search_web")
+    print("   - write_to_notion_database")
+    print("   - send_email_notification")
+    print("   - search_personal_docs")
     print()
 
     try:
@@ -1291,53 +1299,62 @@ if __name__ == "__main__":
                 "messages": [
                     {
                         "role": "user",
-                        "content": (
-                            "請查詢我的個人 ETF 知識庫，"
-                            "告訴我目前 00878、00918、"
-                            "00631L、00685L "
-                            "各持有幾張，以及各自的平均成本。"
-                        )
+                        "content": daily_prompt
                     }
                 ]
             }
         )
 
+        print()
+        print("=" * 70)
+        print("✅ ETF Daily Monitor 執行完成")
+        print("=" * 70)
+        print()
+
+        final_message = (
+            result["messages"][-1]
+        )
+
+        print("最後結果：")
+        print()
+
         print(
-            "Gemini + LangGraph 最終回應："
+            final_message.content
         )
 
         print()
 
-        for message in result["messages"]:
-
-            print(
-                f"[{type(message).__name__}]"
-            )
-
-            print(
-                message.content
-            )
-
-            print()
+        return result
 
     except Exception as e:
 
-        print(
-            "❌ Gemini + LangGraph 測試失敗："
-        )
+        print()
+        print("=" * 70)
+        print("❌ ETF Daily Monitor 執行失敗")
+        print("=" * 70)
+        print()
 
         print(
-            type(e).__name__,
-            str(e)
+            f"{type(e).__name__}: {str(e)}"
         )
 
-    print()
+        print()
 
-    print("=" * 70)
+        raise
 
-    print(
-        "測試結束"
-    )
 
-    print("=" * 70)
-```
+# ============================================================
+# 20. 直接執行 main.py
+#
+# python main.py
+#
+# 現在不再執行舊的單元測試。
+#
+# 會直接執行：
+#
+# ETF Daily Monitor
+# ============================================================
+
+if __name__ == "__main__":
+
+    run_daily_etf_monitor()
