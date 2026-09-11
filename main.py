@@ -30,8 +30,8 @@ import yfinance as yf
 
 from dotenv import load_dotenv
 
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from .mime.multipart import MIMEMultipart
+from .mime.text import MIMEText
 
 from google.oauth2.service_account import Credentials
 
@@ -755,7 +755,6 @@ def send_telegram_message(
             f"❌ Telegram API 錯誤："
             f"{type(e).__name__}: {str(e)}"
         )
-
 
 # ============================================================
 # Telegram 報告格式工具
